@@ -1,4 +1,3 @@
--- DarkFusion UI Library with Lucide Icons
 local DarkFusion = {}
 
 -- Services
@@ -8,10 +7,11 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 -- Main UI ScreenGui
-local screenGui = Instance.new("ScreenGui", PlayerGui)
+local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "DarkFusionUI"
 screenGui.ResetOnSpawn = false
 screenGui.IgnoreGuiInset = true
+screenGui.Parent = PlayerGui
 
 -- Theme colors
 local backgroundColor = Color3.fromRGB(20, 20, 20)
@@ -20,8 +20,9 @@ local white = Color3.fromRGB(255, 255, 255)
 
 -- Helper: Rounded corners
 local function roundify(obj, radius)
-	local corner = Instance.new("UICorner", obj)
+	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0, radius or 10)
+	corner.Parent = obj
 end
 
 -- Helper: Create UI button with Lucide icon
@@ -34,20 +35,112 @@ local function createButtonWithIcon(text, iconId, callback)
 	btn.Font = Enum.Font.GothamBold
 	btn.TextSize = 14
 	btn.AutoButtonColor = true
-	btn.ClipsDescendants = true
 	roundify(btn)
-
+	
 	local icon = Instance.new("ImageLabel", btn)
 	icon.Size = UDim2.new(0, 20, 0, 20)
 	icon.Position = UDim2.new(0, 10, 0.5, -10)
 	icon.Image = "rbxassetid://" .. iconId
 	icon.BackgroundTransparency = 1
-
+	
 	btn.MouseButton1Click:Connect(callback)
 	return btn
 end
 
--- Helper: Create toggle
+-- Recursive visibility setter
+local function setChildrenVisible(parent, visible)
+	for _, child in ipairs(parent:GetChildren()) do
+		if child:IsA("GuiObject") and child.Name ~= "TopBar" then
+			child.Visible = visible
+		end
+	end
+end
+
+-- Main frame
+local mainFrame = Instance.new("Frame", screenGui)
+mainFrame.Name = "MainFrame"
+mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+mainFrame.Size = UDim2.new(0, 400, 0, 400)
+mainFrame.BackgroundColor3 = backgroundColor
+mainFrame.BorderSizePixel = 0
+roundify(mainFrame)
+
+-- TopBar (title bar)
+local topBar = Instance.new("Frame", mainFrame)
+topBar.Name = "TopBar"
+topBar.Size = UDim2.new(1, 0, 0, 40)
+topBar.BackgroundColor3 = accentColor
+roundify(topBar)
+
+local title = Instance.new("TextLabel", topBar)
+title.Text = "DarkFusion Hub"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.TextColor3 = white
+title.BackgroundTransparency = 1
+title.Size = UDim2.new(1, 0, 1, 0)
+
+-- Close Button
+local closeBtn = createButtonWithIcon("X", "123456", function()
+	screenGui:Destroy()
+end)
+closeBtn.Position = UDim2.new(1, -30, 0, 0)
+closeBtn.Size = UDim2.new(0, 30, 1, 0)
+closeBtn.Parent = topBar
+
+-- Minimize Button
+local minimized = false
+local minimizeBtn = createButtonWithIcon("-", "123457", function()
+	minimized = not minimized
+	if minimized then
+		mainFrame.Size = UDim2.new(0, 400, 0, 40)
+		setChildrenVisible(mainFrame, false)
+		topBar.Visible = true
+	else
+		mainFrame.Size = UDim2.new(0, 400, 0, 400)
+		setChildrenVisible(mainFrame, true)
+	end
+end)
+minimizeBtn.Position = UDim2.new(1, -60, 0, 0)
+minimizeBtn.Size = UDim2.new(0, 30, 1, 0)
+minimizeBtn.Parent = topBar
+
+-- Credits
+local credits = Instance.new("TextLabel", mainFrame)
+credits.Text = "Made by VoidedX"
+credits.TextColor3 = white
+credits.Font = Enum.Font.Gotham
+credits.TextSize = 12
+credits.BackgroundTransparency = 1
+credits.Position = UDim2.new(0, 10, 1, -20)
+credits.Size = UDim2.new(0, 200, 0, 20)
+credits.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Draggable TopBar
+local dragging, dragStart, startPos = false
+topBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = mainFrame.Position
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
+
+-- Helper: Create Toggle
 function DarkFusion:CreateToggle(parent, name, callback)
 	local toggle = Instance.new("TextButton", parent)
 	toggle.Size = UDim2.new(1, -20, 0, 30)
@@ -67,7 +160,7 @@ function DarkFusion:CreateToggle(parent, name, callback)
 	end)
 end
 
--- Helper: Create slider
+-- Helper: Create Slider
 function DarkFusion:CreateSlider(parent, name, min, max, default, callback)
 	local frame = Instance.new("Frame", parent)
 	frame.Size = UDim2.new(1, -20, 0, 50)
@@ -125,7 +218,7 @@ function DarkFusion:CreateSlider(parent, name, min, max, default, callback)
 	end)
 end
 
--- Helper: Create tab
+-- Helper: Create Tab
 function DarkFusion:CreateTab(name)
 	local tab = Instance.new("ScrollingFrame")
 	tab.Name = name
@@ -143,99 +236,16 @@ function DarkFusion:CreateTab(name)
 	return tab
 end
 
--- Main window
-local mainFrame = Instance.new("Frame", screenGui)
-mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-mainFrame.Size = UDim2.new(0, 400, 0, 400)
-mainFrame.BackgroundColor3 = backgroundColor
-mainFrame.BorderSizePixel = 0
-roundify(mainFrame)
-
--- Title bar
-local topBar = Instance.new("Frame", mainFrame)
-topBar.Size = UDim2.new(1, 0, 0, 40)
-topBar.BackgroundColor3 = accentColor
-roundify(topBar)
-
-local title = Instance.new("TextLabel", topBar)
-title.Text = "DarkFusion Hub"
-title.Font = Enum.Font.GothamBold
-title.TextSize = 16
-title.TextColor3 = white
-title.BackgroundTransparency = 1
-title.Size = UDim2.new(1, 0, 1, 0)
-
--- Minimize and Close Buttons
-local minimized = false
-
-local closeBtn = createButtonWithIcon("X", "123456", function()
-	screenGui:Destroy()
-end)
-closeBtn.Position = UDim2.new(1, -30, 0, 0)
-closeBtn.Size = UDim2.new(0, 30, 1, 0)
-closeBtn.Parent = topBar
-
-local minimizeBtn = createButtonWithIcon("-", "123457", function()
-	minimized = not minimized
-	mainFrame.Size = minimized and UDim2.new(0, 400, 0, 40) or UDim2.new(0, 400, 0, 400)
-
-	for _, child in ipairs(mainFrame:GetChildren()) do
-		if child ~= topBar then
-			child.Visible = not minimized
-		end
-	end
-end)
-minimizeBtn.Position = UDim2.new(1, -60, 0, 0)
-minimizeBtn.Size = UDim2.new(0, 30, 1, 0)
-minimizeBtn.Parent = topBar
-
--- Credits
-local credits = Instance.new("TextLabel", mainFrame)
-credits.Text = "Made by VoidedX"
-credits.TextColor3 = white
-credits.Font = Enum.Font.Gotham
-credits.TextSize = 12
-credits.BackgroundTransparency = 1
-credits.Position = UDim2.new(0, 10, 1, -20)
-credits.Size = UDim2.new(0, 200, 0, 20)
-credits.TextXAlignment = Enum.TextXAlignment.Left
-
--- Draggable functionality
-local dragging = false
-local dragStart, startPos
-
-topBar.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = input.Position
-		startPos = mainFrame.Position
-	end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-		local delta = input.Position - dragStart
-		mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = false
-	end
-end)
-
--- Example usage
+-- Example Tab + Usage
 local exampleTab = DarkFusion:CreateTab("Main")
 exampleTab.Parent = mainFrame
 
 DarkFusion:CreateToggle(exampleTab, "Example Toggle", function(state)
-	print("Toggle is now", state)
+	print("Toggle:", state)
 end)
 
 DarkFusion:CreateSlider(exampleTab, "Example Slider", 0, 100, 50, function(value)
-	print("Slider value:", value)
+	print("Slider:", value)
 end)
 
 return DarkFusion

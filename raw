@@ -3,6 +3,7 @@ local DarkFusion = {}
 
 -- Services
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
@@ -33,15 +34,15 @@ local function createButtonWithIcon(text, iconId, callback)
 	btn.Font = Enum.Font.GothamBold
 	btn.TextSize = 14
 	btn.AutoButtonColor = true
+	btn.ClipsDescendants = true
 	roundify(btn)
-	
-	-- Icon handling
+
 	local icon = Instance.new("ImageLabel", btn)
 	icon.Size = UDim2.new(0, 20, 0, 20)
 	icon.Position = UDim2.new(0, 10, 0.5, -10)
 	icon.Image = "rbxassetid://" .. iconId
 	icon.BackgroundTransparency = 1
-	
+
 	btn.MouseButton1Click:Connect(callback)
 	return btn
 end
@@ -110,12 +111,14 @@ function DarkFusion:CreateSlider(parent, name, min, max, default, callback)
 			updateFill(input.Position.X)
 		end
 	end)
-	game:GetService("UserInputService").InputEnded:Connect(function(input)
+
+	UserInputService.InputEnded:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = false
 		end
 	end)
-	game:GetService("UserInputService").InputChanged:Connect(function(input)
+
+	UserInputService.InputChanged:Connect(function(input)
 		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
 			updateFill(input.Position.X)
 		end
@@ -135,7 +138,7 @@ function DarkFusion:CreateTab(name)
 	tab.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
 	local layout = Instance.new("UIListLayout", tab)
-	layout.Padding = UDim.new(0, 10) -- Increased padding for better spacing
+	layout.Padding = UDim.new(0, 10)
 
 	return tab
 end
@@ -163,7 +166,9 @@ title.TextColor3 = white
 title.BackgroundTransparency = 1
 title.Size = UDim2.new(1, 0, 1, 0)
 
--- Close & Minimize
+-- Minimize and Close Buttons
+local minimized = false
+
 local closeBtn = createButtonWithIcon("X", "123456", function()
 	screenGui:Destroy()
 end)
@@ -174,6 +179,12 @@ closeBtn.Parent = topBar
 local minimizeBtn = createButtonWithIcon("-", "123457", function()
 	minimized = not minimized
 	mainFrame.Size = minimized and UDim2.new(0, 400, 0, 40) or UDim2.new(0, 400, 0, 400)
+
+	for _, child in ipairs(mainFrame:GetChildren()) do
+		if child ~= topBar then
+			child.Visible = not minimized
+		end
+	end
 end)
 minimizeBtn.Position = UDim2.new(1, -60, 0, 0)
 minimizeBtn.Size = UDim2.new(0, 30, 1, 0)
@@ -192,8 +203,7 @@ credits.TextXAlignment = Enum.TextXAlignment.Left
 
 -- Draggable functionality
 local dragging = false
-local dragStart
-local startPos
+local dragStart, startPos
 
 topBar.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -203,20 +213,20 @@ topBar.InputBegan:Connect(function(input)
 	end
 end)
 
-game:GetService("UserInputService").InputChanged:Connect(function(input)
+UserInputService.InputChanged:Connect(function(input)
 	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
 		local delta = input.Position - dragStart
 		mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 	end
 end)
 
-game:GetService("UserInputService").InputEnded:Connect(function(input)
+UserInputService.InputEnded:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
 		dragging = false
 	end
 end)
 
--- Example tab + usage
+-- Example usage
 local exampleTab = DarkFusion:CreateTab("Main")
 exampleTab.Parent = mainFrame
 

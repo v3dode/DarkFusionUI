@@ -1,4 +1,4 @@
--- DarkFusion UI Library
+-- DarkFusion UI Library with Lucide Icons
 local DarkFusion = {}
 
 -- Services
@@ -23,8 +23,8 @@ local function roundify(obj, radius)
 	corner.CornerRadius = UDim.new(0, radius or 10)
 end
 
--- Helper: Create UI button
-local function createButton(text, callback)
+-- Helper: Create UI button with Lucide icon
+local function createButtonWithIcon(text, iconId, callback)
 	local btn = Instance.new("TextButton")
 	btn.Text = text
 	btn.Size = UDim2.new(1, -20, 0, 30)
@@ -34,6 +34,14 @@ local function createButton(text, callback)
 	btn.TextSize = 14
 	btn.AutoButtonColor = true
 	roundify(btn)
+	
+	-- Icon handling
+	local icon = Instance.new("ImageLabel", btn)
+	icon.Size = UDim2.new(0, 20, 0, 20)
+	icon.Position = UDim2.new(0, 10, 0.5, -10)
+	icon.Image = "rbxassetid://" .. iconId
+	icon.BackgroundTransparency = 1
+	
 	btn.MouseButton1Click:Connect(callback)
 	return btn
 end
@@ -156,34 +164,20 @@ title.BackgroundTransparency = 1
 title.Size = UDim2.new(1, 0, 1, 0)
 
 -- Close & Minimize
-local closeBtn = Instance.new("TextButton", topBar)
-closeBtn.Text = "X"
-closeBtn.Size = UDim2.new(0, 30, 1, 0)
-closeBtn.Position = UDim2.new(1, -30, 0, 0)
-closeBtn.BackgroundColor3 = Color3.fromRGB(40, 0, 40)
-closeBtn.TextColor3 = white
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 14
-roundify(closeBtn)
-closeBtn.MouseButton1Click:Connect(function()
+local closeBtn = createButtonWithIcon("X", "123456", function()
 	screenGui:Destroy()
 end)
+closeBtn.Position = UDim2.new(1, -30, 0, 0)
+closeBtn.Size = UDim2.new(0, 30, 1, 0)
+closeBtn.Parent = topBar
 
-local minimizeBtn = Instance.new("TextButton", topBar)
-minimizeBtn.Text = "-"
-minimizeBtn.Size = UDim2.new(0, 30, 1, 0)
-minimizeBtn.Position = UDim2.new(1, -60, 0, 0)
-minimizeBtn.BackgroundColor3 = Color3.fromRGB(40, 0, 40)
-minimizeBtn.TextColor3 = white
-minimizeBtn.Font = Enum.Font.GothamBold
-minimizeBtn.TextSize = 14
-roundify(minimizeBtn)
-
-local minimized = false
-minimizeBtn.MouseButton1Click:Connect(function()
+local minimizeBtn = createButtonWithIcon("-", "123457", function()
 	minimized = not minimized
 	mainFrame.Size = minimized and UDim2.new(0, 400, 0, 40) or UDim2.new(0, 400, 0, 400)
 end)
+minimizeBtn.Position = UDim2.new(1, -60, 0, 0)
+minimizeBtn.Size = UDim2.new(0, 30, 1, 0)
+minimizeBtn.Parent = topBar
 
 -- Credits
 local credits = Instance.new("TextLabel", mainFrame)

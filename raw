@@ -1,165 +1,211 @@
 -- DarkFusion UI Library
-if game.CoreGui:FindFirstChild("DarkFusionUI") then
-    game.CoreGui.DarkFusionUI:Destroy()
-end
-
-local TweenService = game:GetService("TweenService")
-
--- UI Elements
-local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "DarkFusionUI"
-gui.ResetOnSpawn = false
-
--- Loading Screen
-local loadingFrame = Instance.new("Frame", gui)
-loadingFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-loadingFrame.Size = UDim2.new(1, 0, 1, 0)
-
-local loadingLabel = Instance.new("TextLabel", loadingFrame)
-loadingLabel.Text = "Loading DarkFusion Library..."
-loadingLabel.TextColor3 = Color3.fromRGB(180, 0, 255)
-loadingLabel.BackgroundTransparency = 1
-loadingLabel.Size = UDim2.new(1, 0, 1, 0)
-loadingLabel.Font = Enum.Font.GothamBold
-loadingLabel.TextSize = 32
-
--- Main Frame
-local mainFrame = Instance.new("Frame", gui)
-mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-mainFrame.BorderSizePixel = 0
-mainFrame.Position = UDim2.new(0.05, 0, 0.1, 0)
-mainFrame.Size = UDim2.new(0, 600, 0, 400)
-mainFrame.Visible = false
-
--- Tab Buttons
-local tabHolder = Instance.new("Frame", mainFrame)
-tabHolder.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-tabHolder.Size = UDim2.new(0, 150, 1, 0)
-tabHolder.BorderSizePixel = 0
-
--- Tab Content
-local contentHolder = Instance.new("Frame", mainFrame)
-contentHolder.Position = UDim2.new(0, 150, 0, 0)
-contentHolder.Size = UDim2.new(1, -150, 1, 0)
-contentHolder.BackgroundTransparency = 1
-
--- UI Layouts
-local tabLayout = Instance.new("UIListLayout", tabHolder)
-tabLayout.Padding = UDim.new(0, 5)
-
--- Utility Functions
 local DarkFusion = {}
-DarkFusion.Tabs = {}
 
-function DarkFusion:CreateTab(name)
-    local tabButton = Instance.new("TextButton", tabHolder)
-    tabButton.Text = name
-    tabButton.Size = UDim2.new(1, -10, 0, 30)
-    tabButton.BackgroundColor3 = Color3.fromRGB(30, 0, 50)
-    tabButton.TextColor3 = Color3.new(1, 1, 1)
-    tabButton.Font = Enum.Font.GothamBold
-    tabButton.TextSize = 14
-    tabButton.BorderSizePixel = 0
+-- Services
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-    local tabPage = Instance.new("ScrollingFrame", contentHolder)
-    tabPage.Visible = false
-    tabPage.BackgroundTransparency = 1
-    tabPage.Size = UDim2.new(1, 0, 1, 0)
-    tabPage.CanvasSize = UDim2.new(0, 0, 0, 0)
-    tabPage.ScrollBarThickness = 4
-    tabPage.ScrollBarImageColor3 = Color3.fromRGB(90, 0, 150)
+-- Main UI ScreenGui
+local screenGui = Instance.new("ScreenGui", PlayerGui)
+screenGui.Name = "DarkFusionUI"
+screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
 
-    local tabLayout = Instance.new("UIListLayout", tabPage)
-    tabLayout.Padding = UDim.new(0, 6)
+-- Theme colors
+local backgroundColor = Color3.fromRGB(20, 20, 20)
+local accentColor = Color3.fromRGB(120, 0, 255)
+local white = Color3.fromRGB(255, 255, 255)
 
-    tabButton.MouseButton1Click:Connect(function()
-        for _, t in pairs(DarkFusion.Tabs) do
-            t.page.Visible = false
-        end
-        tabPage.Visible = true
-    end)
-
-    local tab = {
-        button = tabButton,
-        page = tabPage,
-        AddButton = function(self, text, callback)
-            local btn = Instance.new("TextButton", tabPage)
-            btn.Text = text
-            btn.Size = UDim2.new(1, -10, 0, 30)
-            btn.BackgroundColor3 = Color3.fromRGB(40, 0, 80)
-            btn.TextColor3 = Color3.new(1, 1, 1)
-            btn.Font = Enum.Font.Gotham
-            btn.TextSize = 14
-            btn.BorderSizePixel = 0
-            btn.MouseButton1Click:Connect(callback)
-        end,
-        AddToggle = function(self, text, callback)
-            local toggle = Instance.new("TextButton", tabPage)
-            toggle.Size = UDim2.new(1, -10, 0, 30)
-            toggle.BackgroundColor3 = Color3.fromRGB(40, 0, 80)
-            toggle.TextColor3 = Color3.new(1, 1, 1)
-            toggle.Font = Enum.Font.Gotham
-            toggle.TextSize = 14
-            toggle.BorderSizePixel = 0
-            toggle.Text = text .. ": OFF"
-            local state = false
-            toggle.MouseButton1Click:Connect(function()
-                state = not state
-                toggle.Text = text .. ": " .. (state and "ON" or "OFF")
-                callback(state)
-            end)
-        end,
-        AddSlider = function(self, text, min, max, default, callback)
-            local sliderLabel = Instance.new("TextLabel", tabPage)
-            sliderLabel.Size = UDim2.new(1, -10, 0, 20)
-            sliderLabel.Text = text .. ": " .. tostring(default)
-            sliderLabel.TextColor3 = Color3.new(1, 1, 1)
-            sliderLabel.Font = Enum.Font.Gotham
-            sliderLabel.TextSize = 12
-            sliderLabel.BackgroundTransparency = 1
-
-            local slider = Instance.new("TextButton", tabPage)
-            slider.Size = UDim2.new(1, -10, 0, 30)
-            slider.BackgroundColor3 = Color3.fromRGB(50, 0, 100)
-            slider.Text = "Drag to set"
-            slider.TextColor3 = Color3.new(1, 1, 1)
-            slider.Font = Enum.Font.Gotham
-            slider.TextSize = 12
-            slider.BorderSizePixel = 0
-
-            local dragging = false
-            slider.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    dragging = true
-                end
-            end)
-            slider.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    dragging = false
-                end
-            end)
-
-            game:GetService("UserInputService").InputChanged:Connect(function(input)
-                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                    local pos = input.Position.X - slider.AbsolutePosition.X
-                    local ratio = math.clamp(pos / slider.AbsoluteSize.X, 0, 1)
-                    local value = math.floor(min + (max - min) * ratio)
-                    sliderLabel.Text = text .. ": " .. tostring(value)
-                    callback(value)
-                end
-            end)
-        end
-    }
-
-    table.insert(DarkFusion.Tabs, tab)
-    return tab
+-- Helper: Rounded corners
+local function roundify(obj, radius)
+	local corner = Instance.new("UICorner", obj)
+	corner.CornerRadius = UDim.new(0, radius or 10)
 end
 
--- Animate loading screen out
-TweenService:Create(loadingFrame, TweenInfo.new(1), {BackgroundTransparency = 1}):Play()
-TweenService:Create(loadingLabel, TweenInfo.new(1), {TextTransparency = 1}):Play()
-task.wait(1.2)
-loadingFrame:Destroy()
-mainFrame.Visible = true
+-- Helper: Create UI button
+local function createButton(text, callback)
+	local btn = Instance.new("TextButton")
+	btn.Text = text
+	btn.Size = UDim2.new(1, -20, 0, 30)
+	btn.BackgroundColor3 = accentColor
+	btn.TextColor3 = white
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 14
+	btn.AutoButtonColor = true
+	roundify(btn)
+	btn.MouseButton1Click:Connect(callback)
+	return btn
+end
+
+-- Helper: Create toggle
+function DarkFusion:CreateToggle(parent, name, callback)
+	local toggle = Instance.new("TextButton", parent)
+	toggle.Size = UDim2.new(1, -20, 0, 30)
+	toggle.Text = "[ OFF ] " .. name
+	toggle.BackgroundColor3 = backgroundColor
+	toggle.TextColor3 = white
+	toggle.Font = Enum.Font.Gotham
+	toggle.TextSize = 14
+	toggle.AutoButtonColor = false
+	roundify(toggle)
+
+	local enabled = false
+	toggle.MouseButton1Click:Connect(function()
+		enabled = not enabled
+		toggle.Text = (enabled and "[ ON ] " or "[ OFF ] ") .. name
+		callback(enabled)
+	end)
+end
+
+-- Helper: Create slider
+function DarkFusion:CreateSlider(parent, name, min, max, default, callback)
+	local frame = Instance.new("Frame", parent)
+	frame.Size = UDim2.new(1, -20, 0, 50)
+	frame.BackgroundColor3 = backgroundColor
+	roundify(frame)
+
+	local label = Instance.new("TextLabel", frame)
+	label.Text = name .. ": " .. tostring(default)
+	label.Size = UDim2.new(1, 0, 0.4, 0)
+	label.TextColor3 = white
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 14
+
+	local slider = Instance.new("Frame", frame)
+	slider.Position = UDim2.new(0, 0, 0.5, 0)
+	slider.Size = UDim2.new(1, 0, 0.5, -5)
+	slider.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	roundify(slider)
+
+	local fill = Instance.new("Frame", slider)
+	fill.BackgroundColor3 = accentColor
+	fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+	fill.BorderSizePixel = 0
+	fill.Name = "Fill"
+	roundify(fill)
+
+	local dragging = false
+	local function updateFill(x)
+		local rel = (x - slider.AbsolutePosition.X) / slider.AbsoluteSize.X
+		rel = math.clamp(rel, 0, 1)
+		local val = math.floor(min + (max - min) * rel)
+		fill.Size = UDim2.new(rel, 0, 1, 0)
+		label.Text = name .. ": " .. val
+		callback(val)
+	end
+
+	slider.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			updateFill(input.Position.X)
+		end
+	end)
+	game:GetService("UserInputService").InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = false
+		end
+	end)
+	game:GetService("UserInputService").InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			updateFill(input.Position.X)
+		end
+	end)
+end
+
+-- Helper: Create tab
+function DarkFusion:CreateTab(name)
+	local tab = Instance.new("ScrollingFrame")
+	tab.Name = name
+	tab.Size = UDim2.new(1, 0, 1, -60)
+	tab.Position = UDim2.new(0, 0, 0, 40)
+	tab.CanvasSize = UDim2.new(0, 0, 0, 0)
+	tab.ScrollBarThickness = 4
+	tab.BackgroundColor3 = backgroundColor
+	tab.BorderSizePixel = 0
+	tab.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+	local layout = Instance.new("UIListLayout", tab)
+	layout.Padding = UDim.new(0, 5)
+
+	return tab
+end
+
+-- Main window
+local mainFrame = Instance.new("Frame", screenGui)
+mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+mainFrame.Size = UDim2.new(0, 400, 0, 400)
+mainFrame.BackgroundColor3 = backgroundColor
+mainFrame.BorderSizePixel = 0
+roundify(mainFrame)
+
+-- Title bar
+local topBar = Instance.new("Frame", mainFrame)
+topBar.Size = UDim2.new(1, 0, 0, 40)
+topBar.BackgroundColor3 = accentColor
+roundify(topBar)
+
+local title = Instance.new("TextLabel", topBar)
+title.Text = "DarkFusion Hub"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.TextColor3 = white
+title.BackgroundTransparency = 1
+title.Size = UDim2.new(1, 0, 1, 0)
+
+-- Close & Minimize
+local closeBtn = Instance.new("TextButton", topBar)
+closeBtn.Text = "X"
+closeBtn.Size = UDim2.new(0, 30, 1, 0)
+closeBtn.Position = UDim2.new(1, -30, 0, 0)
+closeBtn.BackgroundColor3 = Color3.fromRGB(40, 0, 40)
+closeBtn.TextColor3 = white
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 14
+roundify(closeBtn)
+closeBtn.MouseButton1Click:Connect(function()
+	screenGui:Destroy()
+end)
+
+local minimizeBtn = Instance.new("TextButton", topBar)
+minimizeBtn.Text = "-"
+minimizeBtn.Size = UDim2.new(0, 30, 1, 0)
+minimizeBtn.Position = UDim2.new(1, -60, 0, 0)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(40, 0, 40)
+minimizeBtn.TextColor3 = white
+minimizeBtn.Font = Enum.Font.GothamBold
+minimizeBtn.TextSize = 14
+roundify(minimizeBtn)
+
+local minimized = false
+minimizeBtn.MouseButton1Click:Connect(function()
+	minimized = not minimized
+	mainFrame.Size = minimized and UDim2.new(0, 400, 0, 40) or UDim2.new(0, 400, 0, 400)
+end)
+
+-- Credits
+local credits = Instance.new("TextLabel", mainFrame)
+credits.Text = "Made by VoidedX"
+credits.TextColor3 = white
+credits.Font = Enum.Font.Gotham
+credits.TextSize = 12
+credits.BackgroundTransparency = 1
+credits.Position = UDim2.new(0, 10, 1, -20)
+credits.Size = UDim2.new(0, 200, 0, 20)
+credits.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Example tab + usage
+local exampleTab = DarkFusion:CreateTab("Main")
+exampleTab.Parent = mainFrame
+
+DarkFusion:CreateToggle(exampleTab, "Example Toggle", function(state)
+	print("Toggle is now", state)
+end)
+
+DarkFusion:CreateSlider(exampleTab, "Example Slider", 0, 100, 50, function(value)
+	print("Slider value:", value)
+end)
 
 return DarkFusion

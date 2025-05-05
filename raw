@@ -127,7 +127,7 @@ function DarkFusion:CreateTab(name)
 	tab.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
 	local layout = Instance.new("UIListLayout", tab)
-	layout.Padding = UDim.new(0, 5)
+	layout.Padding = UDim.new(0, 10) -- Increased padding for better spacing
 
 	return tab
 end
@@ -195,6 +195,32 @@ credits.BackgroundTransparency = 1
 credits.Position = UDim2.new(0, 10, 1, -20)
 credits.Size = UDim2.new(0, 200, 0, 20)
 credits.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Draggable functionality
+local dragging = false
+local dragStart
+local startPos
+
+topBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = mainFrame.Position
+	end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
+
+game:GetService("UserInputService").InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
 
 -- Example tab + usage
 local exampleTab = DarkFusion:CreateTab("Main")

@@ -188,7 +188,7 @@ function DarkFusion:CreateSlider(parent, name, min, max, default, callback)
 	fill.Name = "Fill"
 	roundify(fill)
 
-	local dragging = false
+	-- Correct calculation to adjust the position of the fill relative to the slider
 	local function updateFill(x)
 		local rel = (x - slider.AbsolutePosition.X) / slider.AbsoluteSize.X
 		rel = math.clamp(rel, 0, 1)
@@ -198,6 +198,10 @@ function DarkFusion:CreateSlider(parent, name, min, max, default, callback)
 		callback(val)
 	end
 
+	-- Correct initial position of the slider based on the default value
+	updateFill(slider.AbsolutePosition.X + (fill.Size.X.Offset * (default / (max - min))))
+
+	local dragging = false
 	slider.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = true
@@ -236,16 +240,18 @@ function DarkFusion:CreateTab(name)
 	return tab
 end
 
--- Example Tab + Usage
+-- Final Step: Add your custom code for the UI
 local exampleTab = DarkFusion:CreateTab("Main")
 exampleTab.Parent = mainFrame
 
-DarkFusion:CreateToggle(exampleTab, "Example Toggle", function(state)
-	print("Toggle:", state)
+-- Example Usage:
+DarkFusion:CreateToggle(exampleTab, "Enable Feature", function(state)
+	print("Feature Toggled:", state)
 end)
 
-DarkFusion:CreateSlider(exampleTab, "Example Slider", 0, 100, 50, function(value)
-	print("Slider:", value)
+DarkFusion:CreateSlider(exampleTab, "WalkSpeed", 10, 100, 16, function(value)
+	game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = value
 end)
 
+-- Return DarkFusion table so it can be used after loadstring execution
 return DarkFusion
